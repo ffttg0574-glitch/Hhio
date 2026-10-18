@@ -1,0 +1,49 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Unity 2022.3 Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-Android-
+
+      - name: Build APK
+        uses: game-ci/unity-builder@v4
+        with:
+          unityVersion: 2022.3.46f1
+          targetPlatform: Android
+          buildMethod: MiddleEarthBuild.BuildAndroid
+
+      - name: Verify APK exists
+        shell: bash
+        run: test -s Builds/PutKoltsa.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PutKoltsa-Android
+          path: Builds/PutKoltsa.apk
+          if-no-files-found: error
+          retention-days: 14
+
